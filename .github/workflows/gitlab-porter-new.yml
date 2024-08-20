@@ -104,6 +104,12 @@ jobs:
               
               gitlab_path=$(jq -r --arg name "$image_name" --arg dir "$subdir" '.[$name][$dir].Gitlab' < ./gitlab-image-mapper.json)
               gitlab_path="community_images/$gitlab_path"
+
+              if [ -z "$gitlab_path" ] || [ "$gitlab_path" == "null" ]; then
+                echo "Error: Path not found in JSON for image: $image_name, directory: $subdir"
+                exit 1
+              fi
+
               # Create the necessary directory in the GitLab repo
               mkdir -p "./gitlab_repo/$gitlab_path/"
               # Generate the new image files
