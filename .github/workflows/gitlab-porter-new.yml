@@ -89,7 +89,7 @@ jobs:
             gitlab_path=$(jq -r --arg name "$image_name" --arg dir "$subdir" '.[$name][$dir].Gitlab' < ./gitlab-image-mapper.json)
             gitlab_path="community_images/$gitlab_path"
             # Sync the files
-            rsync -av --progress "community_images/$image_name/$subdir/" "./gitlab_repo/$gitlab_path/" --exclude='.git' --exclude='image.yml'
+            rsync -av --progress "community_images/$image_name/$subdir/" "./gitlab_repo/$gitlab_path" --exclude='.git' --exclude='image.yml'
           done
       - name: Process image.yml Changes
         if: env.relevant_files != ''
