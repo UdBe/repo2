@@ -1,0 +1,131 @@
+
+name: Sync Ironbank Changes to GitLab
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'community_images/**'
+  workflow_dispatch:
+
+jobs:
+  Gitlab_Sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository from GitHub
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      # Modify Git User
+      - name: Configure Git User
+        run: |
+          git config --global user.name 'Uday Beswal'
+          git config --global user.email 'uday@beswal.com'
+      - name: Detect Changes in Specified Image Paths
+        id: detect_changes
+        run: |
+          # Get the list of changed files
+          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'community_images/.*/\(ironbank\|bitnami\|iofficial\)/.*' || true)
+          echo "changed_files<<EOF" >> $GITHUB_ENV
+          echo "$changed_files" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          relevant_files=""
+          
+          # Loop through changed files to find relevant ones
+          for file in $changed_files; do
+            # Extract the image name and subdirectory
+            image_name=$(echo "$file" | sed -E 's#community_images/(.*)/(ironbank|bitnami|official)/.*#\1#')
+            subdir=$(echo "$file" | sed -E 's#community_images/.*/(ironbank|bitnami|iofficial)/.*#\1#')
+            # Get the GitLab path from the JSON file
+            gitlab_path=$(jq -r --arg name "$image_name" --arg dir "$subdir" '.[$name][$dir].Github' < ./gitlab-image-mapper.json)
+            
+            # Check if the changed file is relevant
+            if [[ "$file" == *"$gitlab_path"* ]]; then
+              relevant_files+="$file\n"
+            fi
+          done
+          
+          echo "relevant_files<<EOF" >> $GITHUB_ENV
+          echo -e "$relevant_files" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      - name: No Relevant Changes Detected
+        if: env.relevant_files == ''
+        run: echo "No relevant changes detected, skipping GitLab sync workflow."
+      
+      - name: Debugging Output
+        run: |
+          echo "Changed files:"
+          echo "$changed_files"
+          echo "Relevant files:"
+          echo -e "$relevant_files"
+      - name: Clone GitLab Repository
+        if: env.relevant_files != ''
+        run: |
+          mkdir gitlab_repo
+          cd gitlab_repo
+          git init
+          git remote add origin "https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/udaybeswal/rf-test.git"
+          git fetch origin main
+          git checkout main
+      - name: Create New Branch for Changes
+        if: env.relevant_files != ''
+        run: |
+          cd gitlab_repo
+          new_branch="sync-branch-$(date +%Y%m%d%H%M%S)"
+          git checkout -b $new_branch
+          echo "new_branch=$new_branch" >> $GITHUB_ENV
+      - name: Sync GitHub Changes to GitLab Repository
+        if: env.relevant_files != ''
+        run: |
+          echo "${{ env.relevant_files }}" | while IFS= read -r file; do
+              
+            # Extract image name and subdirectory
+            image_name=$(echo "$file" | sed -E 's#community_images/(.*)/(ironbank|bitnami|iofficial)/.*#\1#')
+            subdir=$(echo "$file" | sed -E 's#community_images/.*/(ironbank|bitnami|iofficial)/.*#\1#')
+            
+            # Get the GitLab path from the JSON file              
+            gitlab_path=$(jq -r --arg name "$image_name" --arg dir "$subdir" '.[$name][$dir].Gitlab' < ./gitlab-image-mapper.json)
+            gitlab_path="community_images/$gitlab_path"
+            # Sync the files
+            rsync -av --progress "community_images/$image_name/$subdir/" "./gitlab_repo/$gitlab_path/" --exclude='.git' --exclude='image.yml'
+          done
+      - name: Process image.yml Changes
+        if: env.relevant_files != ''
+        run: |
+          echo "${{ env.relevant_files }}" | while IFS= read -r file; do
+            # Check if image.yml specifically has changed
+            if echo "$file" | grep -q 'community_images/.*/image.yml'; then
+              # Extract image name and subdirectory
+              image_name=$(echo "$file" | sed -E 's#community_images/(.*)/(ironbank|bitnami|iofficial)/.*#\1#')
+              subdir=$(echo "$file" | sed -E 's#community_images/.*/(ironbank|bitnami|iofficial)/.*#\1#')
+              # Get the GitLab path from the JSON file
+              
+              gitlab_path=$(jq -r --arg name "$image_name" --arg dir "$subdir" '.[$name][$dir].Gitlab' < ./gitlab-image-mapper.json)
+              gitlab_path="community_images/$gitlab_path"
+              # Create the necessary directory in the GitLab repo
+              mkdir -p "./gitlab_repo/$gitlab_path/"
+              # Generate the new image files
+              pip install ruamel.yaml
+              python3 scripts/create-gitlab-images-and-setup.py "$file" "./gitlab_repo/$gitlab_path/"
+            fi
+          done
+      - name: Commit and Push Changes to New Branch on GitLab
+        if: env.relevant_files != ''
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          cd gitlab_repo
+          git add .
+          git commit -m "Sync changes from GitHub: ${{ env.relevant_files }}" || echo "No changes to commit"
+          git push origin ${{ env.new_branch }}
+      - name: Create Merge Request on GitLab
+        if: env.relevant_files != ''
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          project_id=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://gitlab.com/api/v4/projects?search=rf-test" | jq ".[0].id")
+          curl --request POST --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          --data "source_branch=${{ env.new_branch }}&target_branch=main&title=Sync changes from GitHub" \
+          "https://gitlab.com/api/v4/projects/${project_id}/merge_requests"
