@@ -1,4 +1,4 @@
 set -e
 set -x
 
-echo "Hello World!   "
+echo "Hello World!    "

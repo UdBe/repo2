@@ -88,6 +88,12 @@ jobs:
             # Get the GitLab path from the JSON file              
             gitlab_path=$(jq -r --arg name "$image_name" --arg dir "$subdir" '.[$name][$dir].Gitlab' < ./gitlab-image-mapper.json)
             gitlab_path="community_images/$gitlab_path"
+
+            if [ -z "$gitlab_path" ] || [ "$gitlab_path" == "null" ]; then
+              echo "Error: Path not found in JSON for image: $image_name, directory: $subdir"
+              exit 1
+            fi
+            
             # Sync the files
             rsync -av --progress "community_images/$image_name/$subdir/" "./gitlab_repo/$gitlab_path" --exclude='.git' --exclude='image.yml'
           done
