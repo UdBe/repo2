@@ -32,4 +32,4 @@ runtimes:
       solr-8-ib:
         repository: "SOLR_8_IMAGE_REPOSITORY"
         tag: "SOLR_8_IMAGE_TAG"
- 
+        test: "TRUE1"
