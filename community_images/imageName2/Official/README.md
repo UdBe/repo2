@@ -1,1 +1,1 @@
-Test from Contrib Folder
+This is a test
