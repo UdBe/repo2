@@ -2,5 +2,9 @@
   "imageName1": {
     "Github": "imageName1/ironbank",
     "Gitlab": "imageName1"
+  },
+  "imageName3": {
+    "Github": "imageName2/ironbank",
+    "Gitlab": "imageName2"
   }
 }
