@@ -84,7 +84,9 @@ jobs:
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         run: |
-          project_id=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://gitlab.com/api/v4/projects?search=rf-test" | jq ".[0].id")
+          
+          # project_id=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://gitlab.com/api/v4/projects?search=rf-test" | jq ".[0].id")
+          project_id=60657614
           curl --request POST --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
           --data "source_branch=${{ env.new_branch }}&target_branch=main&title=Sync changes from GitHub" \
           "https://gitlab.com/api/v4/projects/${project_id}/merge_requests"
