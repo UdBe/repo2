@@ -4,7 +4,7 @@
     "Gitlab": "imageName1"
   },
   "imageName3": {
-    "Github": "imageName2/ironbank",
-    "Gitlab": "imageName2"
+    "Github": "imageName3/ironbank",
+    "Gitlab": "imageName3"
   }
 }
