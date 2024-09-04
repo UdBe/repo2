@@ -1,0 +1,90 @@
+name: Port Ironbank Images to GitLab
+
+# TODO: Remove on:push
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  Image_Porter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository from GitHub
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # TODO: Modify Git User
+      - name: Configure Git User
+        run: |
+          git config --global user.name 'Uday Beswal'
+          git config --global user.email 'uday@beswal.com'
+
+      #TODO: Update the GitLab Repository URL
+      - name: Clone GitLab Repository
+        run: |
+          mkdir gitlab_repo
+          cd gitlab_repo
+          git init
+          git remote add origin "https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/udaybeswal/rf-test.git"
+          git fetch origin main
+          git checkout main
+
+      - name: Create New Branch for Changes
+        run: |
+          cd gitlab_repo
+          new_branch="sync-branch-$(date +%Y%m%d%H%M%S)"
+          git checkout -b $new_branch
+          echo "new_branch=$new_branch" >> $GITHUB_ENV
+
+      - name: Sync GitHub Changes to GitLab Repository
+        run: |
+          # Load the image mapper JSON file and sync paths
+          cat ./gitlab-image-mapper.json | jq -r 'keys[]' | while IFS= read -r image_name; do
+            # Retrieve the corresponding GitHub and GitLab paths from the JSON mapper
+            github_path=$(jq -r --arg name "$image_name" '.[$name].Github' < ./gitlab-image-mapper.json)
+            gitlab_path=$(jq -r --arg name "$image_name" '.[$name].Gitlab' < ./gitlab-image-mapper.json)
+
+            # Construct full paths with community_images
+            github_full_path="community_images/${github_path}"
+            gitlab_full_path="community_images/${gitlab_path}"
+
+            # Sync files from GitHub to GitLab excluding .git and image.yml
+            rsync -av --progress "$github_full_path/" "./gitlab_repo/$gitlab_full_path/" --exclude='.git' --exclude='docker-compose.yml' --exclude='image.yml'
+          done
+
+      - name: Create image.ymls for Gitlab
+        run: |
+          # Iterate through the image mapper and process image.yml files
+          cat ./gitlab-image-mapper.json | jq -r 'keys[]' | while IFS= read -r image_name; do
+            github_path="community_images/$image_name/ironbank/image.yml"
+            gitlab_path=$(jq -r --arg name "$image_name" '.[$name].Gitlab' < ./gitlab-image-mapper.json)
+            gitlab_path="community_images/${gitlab_path}"
+
+            if [ -f "$github_path" ]; then
+              mkdir -p "./gitlab_repo/$gitlab_path/"
+              # Install dependencies and run the script to process image.yml
+              pip install ruamel.yaml
+              python3 scripts/create-gitlab-images-and-setup.py "$github_path" "./gitlab_repo/$gitlab_path/"
+            fi
+          done
+
+      - name: Commit and Push Changes to New Branch on GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          cd gitlab_repo
+          git add .
+          git commit -m "Sync changes from GitHub"
+          git push origin ${{ env.new_branch }}
+
+      - name: Create Merge Request on GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          project_id=$(curl --header "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://gitlab.com/api/v4/projects?search=rf-test" | jq ".[0].id")
+          curl --request POST --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          --data "source_branch=${{ env.new_branch }}&target_branch=main&title=Sync changes from GitHub" \
+          "https://gitlab.com/api/v4/projects/${project_id}/merge_requests"

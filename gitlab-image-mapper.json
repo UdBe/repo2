@@ -1,16 +1,6 @@
 {
-    "imageName1": {
-      "ironbank": {
-        "Github": "imageName1/ironbank",
-        "Gitlab": "imageName1"
-      },
-      "bitnami": {
-        "Github": "imageName1/bitnami",
-        "Gitlab": "imageName1"
-      },
-      "official": {
-        "Github": "imageName1/official",
-        "Gitlab": "imageName1"
-      }
-    }
+  "imageName1": {
+    "Github": "imageName1/ironbank",
+    "Gitlab": "imageName1"
+  }
 }
