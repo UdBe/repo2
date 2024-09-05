@@ -1,4 +1,4 @@
-name: solr-8-ib-solr-8-ib-test
+name: solr-8
 official_name: Solr-8 Iron Bank
 official_website: https://solr.apache.org/
 source_image_provider: Platform One

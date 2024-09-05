@@ -48,7 +48,7 @@ jobs:
             gitlab_path=$(jq -r --arg name "$image_name" '.[$name].Gitlab' < ./gitlab-image-mapper.json)
 
             # Construct full paths with community_images
-            github_full_path="community_images/${github_path}"
+            github_full_path="community_images/${github_path}/ironbank"
             gitlab_full_path="community_images/${gitlab_path}"
 
             # Sync files from GitHub to GitLab excluding .git and image.yml
