@@ -70,7 +70,7 @@ jobs:
               python3 scripts/create-gitlab-images-and-setup.py "$github_path" "./gitlab_repo/$gitlab_path/"
             fi
           done
-
+        #TODO: Update Commit Message
       - name: Commit and Push Changes to New Branch on GitLab
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
@@ -79,7 +79,7 @@ jobs:
           git add .
           git commit -m "Sync changes from GitHub"
           git push origin ${{ env.new_branch }}
-
+        #TODO: Update Project ID
       - name: Create Merge Request on GitLab
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
