@@ -27,7 +27,7 @@ jobs:
           mkdir gitlab_repo
           cd gitlab_repo
           git init
-          git remote add origin "https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/udaybeswal/rf-test/.git"
+          git remote add origin "https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/udaybeswal/rf-test.git"
           git fetch origin main
           git checkout main
 
