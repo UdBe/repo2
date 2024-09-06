@@ -48,7 +48,7 @@ jobs:
             gitlab_path=$(jq -r --arg name "$image_name" '.[$name].Gitlab' < ./gitlab-image-mapper.json)
 
             # Construct full paths with community_images
-            github_full_path="community_images/${github_path}/ironbank"
+            github_full_path="community_images/${github_path}"
             gitlab_full_path="community_images/${gitlab_path}"
 
             # Sync files from GitHub to GitLab excluding .git and image.yml
@@ -67,7 +67,7 @@ jobs:
               mkdir -p "./gitlab_repo/$gitlab_path/"
               # Install dependencies and run the script to process image.yml
               pip install ruamel.yaml
-              python3 scripts/create-gitlab-images-and-setup.py "$github_path" "./gitlab_repo/$gitlab_path/"
+              python3 scripts/create-gitlab-imageymls-and-setup.py "$github_path" "./gitlab_repo/$gitlab_path/"
             fi
           done
         #TODO: Update Commit Message
