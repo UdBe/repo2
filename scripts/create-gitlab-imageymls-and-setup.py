@@ -106,8 +106,7 @@ def transform_data(data, input_registry, output_registry, preserve_repo_sets=Fal
 
     # Extract the input_base_tag and ensure it is properly quoted with double quotes
     repo_info = data.get("repo_sets", [{}])[0].values()
-    input_base_tag = str(next(iter(repo_info), {}).get("input_base_tag", ""))
-    input_base_tag = f'"{input_base_tag}"'
+    input_base_tag = next(iter(repo_info), {}).get("input_base_tag", "")
 
     # Process runtimes and apply modifications
     transformed_runtimes = process_runtimes(copy.deepcopy(data), repo_name, base_imagepullsecret, is_repo1=is_repo1)

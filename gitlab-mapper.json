@@ -1,0 +1,14 @@
+{
+  "imageName1": {
+    "Github": "imageName1/ironbank",
+    "Gitlab": "imageName1"
+  },
+  "imageName2": {
+    "Github": "imageName2/official",
+    "Gitlab": "imageName2"
+  },
+  "imageName3": {
+    "Github": "imageName3/ironbank",
+    "Gitlab": "imageName3"
+  }
+}
