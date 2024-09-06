@@ -53,14 +53,21 @@ jobs:
 
             # Commit the changes
             git add .
-            git commit -m "Sync changes for $image_name from GitHub"
-            git push origin $new_branch
 
-            # Create a merge request with the image name in the title
-            project_id=60657614
-            curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
-            --data "source_branch=$new_branch&target_branch=main&title=Sync changes for $image_name from GitHub" \
-            "https://gitlab.com/api/v4/projects/${project_id}/merge_requests"
+            if git diff-index --quiet HEAD; then
+              echo "No changes to commit"
+            else
+              git commit -m "Sync changes for $image_name from GitHub"
+              git push origin $new_branch
+
+              git commit -m "Sync changes for $image_name from GitHub"
+              git push origin $new_branch
+
+              # Create a merge request with the image name in the title
+              project_id=60657614
+              curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
+              --data "source_branch=$new_branch&target_branch=main&title=Sync changes for $image_name from GitHub" \
+              "https://gitlab.com/api/v4/projects/${project_id}/merge_requests"
 
             # Go back to the main directory
             cd ..
