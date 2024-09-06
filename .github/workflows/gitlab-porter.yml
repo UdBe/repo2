@@ -27,7 +27,7 @@ jobs:
           mkdir gitlab_repo
           cd gitlab_repo
           git init
-          git remote add origin "https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/udaybeswal/rf-test.git"
+          git remote add origin "https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/rf-devops/community-images.git"
           git fetch origin main
           git checkout main
 
@@ -62,8 +62,10 @@ jobs:
               # Create a merge request with the image name in the title
               project_id=60657614
               curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
-              --data "source_branch=$new_branch&target_branch=main&title=Sync changes for $image_name from GitHub" \
+              --data "source_branch=$new_branch&target_branch=main&title=Sync updates for $image_name" \
               "https://gitlab.com/api/v4/projects/${project_id}/merge_requests"
+
+              git checkout main
             fi
 
             # Go back to the main directory
