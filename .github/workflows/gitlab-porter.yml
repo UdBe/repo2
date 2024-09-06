@@ -68,6 +68,8 @@ jobs:
               curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
               --data "source_branch=$new_branch&target_branch=main&title=Sync changes for $image_name from GitHub" \
               "https://gitlab.com/api/v4/projects/${project_id}/merge_requests"
+
+              git checkout main
             fi
             # Go back to the main directory
             cd ..
