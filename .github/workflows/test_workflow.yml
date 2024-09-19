@@ -15,9 +15,13 @@ on:
         description: 'Should job3 fail? (true/false)'
         required: true
         default: 'true'
+      fail_job4:
+        description: 'Should job4 fail? (true/false)'
+        required: true
+        default: 'false'
 
 jobs:
-  job1:
+  job1-ib:
     runs-on: ubuntu-latest
     steps:
       - name: Job 1 Step
@@ -29,7 +33,7 @@ jobs:
             echo "Job 1 passed."
           fi
 
-  job2:
+  job2-ib:
     runs-on: ubuntu-latest
     steps:
       - name: Job 2 Step
@@ -41,7 +45,7 @@ jobs:
             echo "Job 2 passed."
           fi
 
-  job3:
+  job3-ib:
     runs-on: ubuntu-latest
     steps:
       - name: Job 3 Step
@@ -52,3 +56,15 @@ jobs:
           else
             echo "Job 3 passed."
           fi
+  
+  job4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Job 4 Step
+        run: |
+            if [ "${{ github.event.inputs.fail_job4 }}" == "true" ]; then
+            echo "Job 4 is set to fail."
+            exit 1
+            else
+            echo "Job 4 passed."
+            fi
