@@ -1,0 +1,103 @@
+name: Report IB Build Failures
+
+on:
+  # TODO: Add Cron Schedule
+  # TO UPDATE: "Test Multi-Job Workflow"
+  # ONLY -ib suffix
+  # Crate better issues, handle duplicacy 
+  # Integrate DataDog
+  
+  workflow_dispatch:
+
+jobs:
+  report-failures:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the last two runs of "Test Multi-Job Workflow" workflow
+        id: get_runs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const workflowName = 'Test Multi-Job Workflow';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Get the workflows in the repo
+            const workflows = await github.rest.actions.listRepoWorkflows({
+              owner,
+              repo
+            });
+
+            // Find the workflow ID for "Test Multi-Job Workflow"
+            const workflow = workflows.data.workflows.find(wf => wf.name === workflowName);
+            if (!workflow) {
+              core.setFailed(`Workflow "${workflowName}" not found.`);
+              return;
+            }
+            const workflow_id = workflow.id;
+
+            // Get the last two workflow runs
+            const runsResponse = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id,
+              per_page: 2,
+            });
+            const runs = runsResponse.data.workflow_runs;
+            if (runs.length < 2) {
+              core.setFailed('Not enough workflow runs found.');
+              return;
+            }
+            // Output the run IDs
+            core.setOutput('run_id1', runs[0].id);
+            core.setOutput('run_id2', runs[1].id);
+
+      - name: Get failed jobs from the last two runs
+        id: get_failed_jobs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const run_id1 = '${{ steps.get_runs.outputs.run_id1 }}';
+            const run_id2 = '${{ steps.get_runs.outputs.run_id2 }}';
+
+            async function getFailedJobs(run_id) {
+              const jobsResponse = await github.rest.actions.listJobsForWorkflowRun({
+                owner,
+                repo,
+                run_id,
+                per_page: 200,
+              });
+              const jobs = jobsResponse.data.jobs;
+              const failedJobs = jobs.filter(job => job.conclusion === 'failure');
+              return failedJobs.map(job => job.name);
+            }
+
+            const failedJobs1 = await getFailedJobs(run_id1);
+            const failedJobs2 = await getFailedJobs(run_id2);
+
+            // Find jobs that failed in both runs
+            const failedInBoth = failedJobs1.filter(job => failedJobs2.includes(job));
+            core.setOutput('failed_jobs', failedInBoth.join(','));
+
+      - name: Report jobs failed in last two runs
+        if: steps.get_failed_jobs.outputs.failed_jobs != ''
+        run: |
+          echo "Jobs failed in both of the last two runs: ${{ steps.get_failed_jobs.outputs.failed_jobs }}"
+          # Additional reporting can be added here, e.g., create an issue or send a notification.
+
+      # Optional: Create an issue for failed jobs
+    #   - name: Create an issue for failed jobs
+    #     if: steps.get_failed_jobs.outputs.failed_jobs != ''
+    #     uses: actions-ecosystem/action-create-issue@v1
+    #     with:
+    #       token: ${{ secrets.GITHUB_TOKEN }}
+    #       title: 'Consecutive failures in jobs: ${{ steps.get_failed_jobs.outputs.failed_jobs }}'
+    #       body: |
+    #         The following jobs have failed in the last two runs of the "Test Multi-Job Workflow" workflow:
+
+    #         ${{ steps.get_failed_jobs.outputs.failed_jobs }}
+
+    #         Please investigate.
+    #       labels: failure

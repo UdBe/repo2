@@ -1,0 +1,54 @@
+name: Test Multi-Job Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      fail_job1:
+        description: 'Should job1 fail? (true/false)'
+        required: true
+        default: 'true'
+      fail_job2:
+        description: 'Should job2 fail? (true/false)'
+        required: true
+        default: 'false'
+      fail_job3:
+        description: 'Should job3 fail? (true/false)'
+        required: true
+        default: 'true'
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Job 1 Step
+        run: |
+          if [ "${{ github.event.inputs.fail_job1 }}" == "true" ]; then
+            echo "Job 1 is set to fail."
+            exit 1
+          else
+            echo "Job 1 passed."
+          fi
+
+  job2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Job 2 Step
+        run: |
+          if [ "${{ github.event.inputs.fail_job2 }}" == "true" ]; then
+            echo "Job 2 is set to fail."
+            exit 1
+          else
+            echo "Job 2 passed."
+          fi
+
+  job3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Job 3 Step
+        run: |
+          if [ "${{ github.event.inputs.fail_job3 }}" == "true" ]; then
+            echo "Job 3 is set to fail."
+            exit 1
+          else
+            echo "Job 3 passed."
+          fi

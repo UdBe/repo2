@@ -1,13 +1,10 @@
 name: Port Ironbank Images to GitLab
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
-  Image_Porter:
+  Gitlab_Image_Porter:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository from GitHub
@@ -15,7 +12,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Modify Git User
       - name: Configure Git User
         run: |
           git config --global user.name 'Uday Beswal'
