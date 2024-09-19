@@ -90,10 +90,10 @@ jobs:
         run: |
           echo "Jobs failed in both of the last two runs: ${{ steps.get_failed_jobs.outputs.failed_jobs }}"
 
-          - name: Create issues for failed jobs
-          uses: actions/github-script@v7
-          with:
-            script: |
+      - name: Create issues for failed jobs
+        uses: actions/github-script@v7
+        with:
+          script: |
               const failedJobs = '${{ steps.get_failed_jobs.outputs.failed_jobs }}'.split(',').map(job => job.trim());
               const owner = context.repo.owner;
               const repo = context.repo.repo;
